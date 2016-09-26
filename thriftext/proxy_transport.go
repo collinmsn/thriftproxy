@@ -16,10 +16,14 @@ type TProxyTransport struct {
 	buf     []byte
 }
 
-func NewTProxyTransport(transport *thrift.TFramedTransport) *TProxyTransport {
+func NewTProxyTransport(transport thrift.TTransport) *TProxyTransport {
+	framedTransport, ok := transport.(*thrift.TFramedTransport)
+	if !ok {
+		panic("FramedTransport is required")
+	}
 	return &TProxyTransport{
-		TFramedTransport:transport,
-		buf: make([]byte, 4),
+		TFramedTransport: framedTransport,
+		buf:              make([]byte, 4),
 	}
 }
 
@@ -38,15 +42,6 @@ func (p *TProxyTransport) Flush() error {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 	return p.TFramedTransport.Flush()
-}
-
-func (p *TProxyTransport) Read(buf []byte) (l int, err error) {
-	panic("Forbidden")
-	return
-}
-func (p *TProxyTransport) RemainingBytes() (num_bytes uint64) {
-	panic("Forbidden")
-	return
 }
 
 type tProxyTransportFactory struct {

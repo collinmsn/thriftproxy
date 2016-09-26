@@ -43,13 +43,15 @@ func (proxy *Proxy) Serve() {
 	defer l.Close()
 
 	log.Info("thrift proxy listen on", proxy.conf.ServicePort)
-	for i := 0; ; i++ {
+	count := -1
+	for {
+		count += 1
 		conn, err := l.Accept()
 		if err != nil {
 			log.Error("Accept failed", err)
 			break
 		}
-		if proxy.conf.LogAccessEvery == 0 || i%proxy.conf.LogAccessEvery == 0 {
+		if proxy.conf.LogAccessEvery == 0 || count%proxy.conf.LogAccessEvery == 0 {
 			log.Infof("Accept connection %s -> %s", conn.RemoteAddr(), conn.LocalAddr())
 
 		}
@@ -75,7 +77,7 @@ func handleConnection(conn net.Conn, pools map[string]pool.Pool, ring *hashring.
 		// send response back to client
 		sizeBuf := make([]byte, 4)
 		binary.BigEndian.PutUint32(sizeBuf, size)
-		if _, err = conn.Write(buf); err != nil {
+		if _, err = conn.Write(sizeBuf); err != nil {
 			log.Error("Failed to write frame size to client", err)
 			return
 		}
@@ -93,6 +95,7 @@ func readFromClient(reader io.Reader) (hashKey, size uint32, buf []byte, err err
 	}
 	size = binary.BigEndian.Uint32(buf)
 	if size < 4 {
+		// Note: FrameTransport maxLength should also be checked here, but it's not accessible
 		err = thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("Incorrect frame size (%d)", size))
 		return
 	}
@@ -100,6 +103,7 @@ func readFromClient(reader io.Reader) (hashKey, size uint32, buf []byte, err err
 	if _, err = io.ReadFull(reader, buf); err != nil {
 		return
 	}
+
 	size -= 4
 	hashKey = binary.BigEndian.Uint32(buf[size:])
 	return hashKey, size, buf[:size], nil
@@ -112,23 +116,31 @@ func requestBackend(hashKey, size uint32, buf []byte, pools map[string]pool.Pool
 		err = fmt.Errorf("Failed to get node from hashring", hashKey)
 		log.Error(err)
 		return
+	} else {
+		log.Debugf("Get backend: %s, hashKey: %d", server, hashKey)
 	}
 	backendConn, err := pools[server].Get()
 	if err != nil {
-		log.Error("Failed to get backend connection", err, server)
+		log.Errorf("Failed to get backend connection", err, server)
 		return
 	}
 	defer backendConn.Close()
 	// send to backend
+	var n int
 	sizeBuf := make([]byte, 4)
 	binary.BigEndian.PutUint32(sizeBuf, size)
-	if _, err = backendConn.Write(buf); err != nil {
+	if _, err = backendConn.Write(sizeBuf); err != nil {
 		log.Error("Failed to write frame size to backend", err)
 		backendConn.(*pool.PoolConn).MarkUnusable()
 		return
 	}
-	if _, err = backendConn.Write(buf); err != nil {
+	if n, err = backendConn.Write(buf); err != nil {
 		log.Error("Failed to write frame payload to backend", err)
+		backendConn.(*pool.PoolConn).MarkUnusable()
+		return
+	} else if uint32(n) != size {
+		err = fmt.Errorf("Failed to write frame payload to backend, expected size: %d, writted: %d", size,
+			n)
 		backendConn.(*pool.PoolConn).MarkUnusable()
 		return
 	}
