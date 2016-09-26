@@ -1,0 +1,43 @@
+{
+	"ImportPath": "github.com/collinmsn/thriftproxy",
+	"GoVersion": "go1.6",
+	"GodepVersion": "v74",
+	"Packages": [
+		"./cmd/thriftproxy"
+	],
+	"Deps": [
+		{
+			"ImportPath": "git.apache.org/thrift.git/lib/go/thrift",
+			"Rev": "5767901e791f80924ceee71b3981d8a330dcb875"
+		},
+		{
+			"ImportPath": "github.com/BurntSushi/toml",
+			"Comment": "v0.2.0-19-gbec2dac",
+			"Rev": "bec2dacf4b590d26237cfebff4471e21ce543494"
+		},
+		{
+			"ImportPath": "github.com/fatih/camelcase",
+			"Rev": "f6a740d52f961c60348ebb109adde9f4635d7540"
+		},
+		{
+			"ImportPath": "github.com/fatih/structs",
+			"Rev": "be738c8546f55b34e60125afa50ed73a9a9c460e"
+		},
+		{
+			"ImportPath": "github.com/koding/multiconfig",
+			"Rev": "adb14a9648f101b3a5ac2b370a7d37c4a4a08b39"
+		},
+		{
+			"ImportPath": "github.com/ngaut/logging",
+			"Rev": "f98f5f4cd523647678af6f1726c5b5a14c9193d0"
+		},
+		{
+			"ImportPath": "github.com/serialx/hashring",
+			"Rev": "75d57fa264ad17fd929304dfdb02c8e278c5c01c"
+		},
+		{
+			"ImportPath": "gopkg.in/fatih/pool.v2",
+			"Rev": "cba550ebf9bce999a02e963296d4bc7a486cb715"
+		}
+	]
+}
