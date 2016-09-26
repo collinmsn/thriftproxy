@@ -20,4 +20,4 @@ test:
 
 clean:
 	rm -rf bin
-	rm -rf thriftproxy_test
+	rm -rf example

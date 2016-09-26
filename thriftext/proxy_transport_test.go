@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
+	"github.com/collinmsn/thriftproxy/example"
 	"github.com/collinmsn/thriftproxy/proxy"
-	"github.com/collinmsn/thriftproxy/thriftproxy_test"
 	log "github.com/ngaut/logging"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTProxyTransport_Flush(t *testing.T) {
 	assert := assert.New(t)
-	req := thriftproxy_test.NewAddRequest()
+	req := example.NewAddRequest()
 	req.First, req.Second = 2, 3
 
 	memBuffer1 := thrift.NewTMemoryBuffer()
@@ -40,8 +40,8 @@ func TestTProxyTransport_Flush(t *testing.T) {
 type AdderHandler struct {
 }
 
-func (h *AdderHandler) Add(req *thriftproxy_test.AddRequest) (r *thriftproxy_test.AddResponse, err error) {
-	r = thriftproxy_test.NewAddResponse()
+func (h *AdderHandler) Add(req *example.AddRequest) (r *example.AddResponse, err error) {
+	r = example.NewAddResponse()
 	r.Sum = req.First + req.Second
 	return
 }
@@ -56,7 +56,7 @@ func ExampleNewTProxyTransport() {
 		if err := serverTransport.Open(); err != nil {
 			panic(err)
 		}
-		server := thrift.NewTSimpleServer4(thriftproxy_test.NewAdderProcessor(&AdderHandler{}), serverTransport,
+		server := thrift.NewTSimpleServer4(example.NewAdderProcessor(&AdderHandler{}), serverTransport,
 			thrift.NewTFramedTransportFactory(thrift.NewTTransportFactory()), thrift.NewTBinaryProtocolFactory(true, true))
 		server.Serve()
 	}
@@ -86,9 +86,9 @@ func ExampleNewTProxyTransport() {
 	}
 	defer proxyTransport.Close()
 	proxyTransport.SetHashKey(1234)
-	client := thriftproxy_test.NewAdderClientFactory(proxyTransport, thrift.NewTBinaryProtocolFactory(true, true))
+	client := example.NewAdderClientFactory(proxyTransport, thrift.NewTBinaryProtocolFactory(true, true))
 
-	req := &thriftproxy_test.AddRequest{First: 2, Second: 3}
+	req := &example.AddRequest{First: 2, Second: 3}
 	resp, err := client.Add(req)
 	if err != nil {
 		log.Error("Rpc failed", err)

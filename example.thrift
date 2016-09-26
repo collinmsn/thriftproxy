@@ -1,5 +1,5 @@
 
-namespace go thriftproxy_test
+namespace go example
 
 struct AddRequest {
 1: i32 first,
